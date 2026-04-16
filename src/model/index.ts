@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import { proxy, snapshot, subscribe  } from 'valtio';
-import { useSnapshot } from 'valtio/react';
+
 
 import { middlewareMap } from '@/middleware';
 import {
@@ -60,10 +60,6 @@ export function createValtioModel<S extends object, A extends object>(
         scheduler(model.onInitialization);
     }
     return model as ValtioModel<S, A> & A;
-}
-
-export function useDuskValtioSnapshot<S extends object>(model: ValtioModel<S, any>) {
-    return useSnapshot(model.state);
 }
 
 function createInterceptedAction<F extends Function>(

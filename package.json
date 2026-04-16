@@ -1,6 +1,6 @@
 {
     "name": "@xams-framework/dusk-valtio",
-    "version": "0.0.1",
+    "version": "0.0.4",
     "type": "module",
     "scripts": {
         "dev": "vite --force",
@@ -10,14 +10,19 @@
         "format": "prettier --write --experimental-cli ./",
         "format:check": "prettier --check ."
     },
+    "homepage": "https://github.com/xams-creator/dusk-valtio",
+    "author": {
+        "name": "xams-creator",
+        "email": "1228552328@qq.com",
+        "url": "https://github.com/xams-creator"
+    },
     "peerDependencies": {
         "react": ">=18",
         "react-dom": ">=18"
     },
-    "lib": [
+    "files": [
         "dist"
     ],
-    "source": "./src/index.ts",
     "main": "./dist/dusk-valtio.js",
     "module": "./dist/dusk-valtio.js",
     "types": "./dist/index.d.ts",
