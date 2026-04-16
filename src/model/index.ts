@@ -1,6 +1,5 @@
 import { isEqual } from 'lodash';
-import { proxy, snapshot, subscribe  } from 'valtio';
-
+import { proxy, snapshot, subscribe } from 'valtio';
 
 import { middlewareMap } from '@/middleware';
 import {
@@ -10,7 +9,7 @@ import {
 } from '@/types';
 import scheduler from '@/utiils/scheduler.ts';
 
-import { proxy as _proxy, isAsyncFunction } from '../common';
+import { _proxy, isAsyncFunction } from '@/common';
 import { deepClone } from 'valtio/utils';
 
 export function createValtioModel<S extends object, A extends object>(
