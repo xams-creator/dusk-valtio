@@ -7,7 +7,7 @@ import {
     CreateValtioModelOptions,
     ValtioModel,
 } from '@/types';
-import scheduler from '@/utiils/scheduler.ts';
+import { scheduler } from '@/utiils';
 
 import { _proxy, isAsyncFunction } from '@/common';
 import { deepClone } from 'valtio/utils';

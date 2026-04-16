@@ -6,7 +6,7 @@ function isFunction(fn) {
     return typeof fn === 'function';
 }
 
-export default function scheduler(fn: any) {
+export function scheduler(fn: any) {
     if (!isFunction(fn)) {
         return;
     }

@@ -6,3 +6,4 @@ export { useDuskValtioSnapshot } from './hooks';
 export { subscribe, proxy, snapshot, useSnapshot, ref } from 'valtio';
 export * from 'valtio/utils';
 export { _proxy } from './common';
+export { scheduler } from './utiils';
