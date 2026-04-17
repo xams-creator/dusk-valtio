@@ -1,73 +1,131 @@
-# React + TypeScript + Vite
+# Dusk Valtio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React frontend framework based on [valtio](https://github.com/pmndrs/valtio)
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Typescript supports
+- Lifecycle
+- Plugin
+- Simplified model
 
-## React Compiler
+## Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```
+npm i lodash
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-    globalIgnores(['dist']),
-    {
-        files: ['**/*.{ts,tsx}'],
-        extends: [
-            // Other configs...
-
-            // Remove tseslint.configs.recommended and replace with this
-            tseslint.configs.recommendedTypeChecked,
-            // Alternatively, use this for stricter rules
-            tseslint.configs.strictTypeChecked,
-            // Optionally, add this for stylistic rules
-            tseslint.configs.stylisticTypeChecked,
-
-            // Other configs...
-        ],
-        languageOptions: {
-            parserOptions: {
-                project: ['./tsconfig.node.json', './tsconfig.app.json'],
-                tsconfigRootDir: import.meta.dirname,
-            },
-            // other options...
-        },
-    },
-]);
+npm i @xams-framework/dusk-valtio
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Usage
 
-```js
-// eslint.config.js
-import reactDom from 'eslint-plugin-react-dom';
-import reactX from 'eslint-plugin-react-x';
+### Basic
 
-export default defineConfig([
-    globalIgnores(['dist']),
-    {
-        files: ['**/*.{ts,tsx}'],
-        extends: [
-            // Other configs...
-            // Enable lint rules for React
-            reactX.configs['recommended-typescript'],
-            // Enable lint rules for React DOM
-            reactDom.configs.recommended,
-        ],
-        languageOptions: {
-            parserOptions: {
-                project: ['./tsconfig.node.json', './tsconfig.app.json'],
-                tsconfigRootDir: import.meta.dirname,
-            },
-            // other options...
+```tsx
+import { createValtioModel } from '@xams-framework/dusk-valtio';
+
+interface CounterState {
+    count: number;
+}
+
+function fetchUser(id: number) {
+    return Promise.resolve({ id, name: 'xams-creator' });
+}
+
+const vm = createValtioModel({
+    namespace: 'vitest',
+    initialState: {
+        count: 0,
+    } as CounterState,
+    actions: {
+        add() {
+            return this.state.count++;
+        },
+        set(count: number) {
+            this.state.count = count;
+        },
+        async request(id: number) {
+            console.log('execute...')
+            return await fetchUser(id);
         },
     },
-]);
+});
+
+// result: 1
+vm.actions.add();
+
+// result: 2
+vm.add();
+
+// effect method
+await vm.actions.request(1);
+
+// set count...
+vm.set(998)
+
+// it's ok
+vm.state.count = 123;
+
+// reset state
+vm.$reset();
+
+conosle.log(vm.state.count === 0)   // true
+```
+
+### Plugins
+
+```tsx
+import { use } from '@xams-framework/dusk-valtio';
+
+// global use...
+use({
+    name: 'test1',
+    async apply(ctx, next) {
+        console.log('[test1] begin....')
+        await next();
+        console.log('[test1] end....')
+    }
+})
+use({
+    name: 'test2',
+    async apply(ctx, next) {
+        console.log('[test2] begin....')
+        await next();
+        console.log('[test2] end....')
+    }
+})
+
+/**
+ *  省略创建模型代码...
+ *
+ *  const vm = createValtioModel({
+ *      ...
+ })
+ * ***/
+
+await vm.requet()
+/*
+*   [test1] begin...
+*       [test2] begin...
+*           execute...
+*       [test2] end...
+*   [test1] end...
+* */
+```
+
+### Lifecycle
+
+```tsx
+const vm = createValtioModel({
+    namespace: 'vitest',
+    initialState: {
+        count: 0,
+    } as CounterState,
+    onInitialization() {
+        console.log(this.state);    // {count: 0}
+    },
+    onStateChange(oldState, newState) {
+        console.log(oldState, newState)
+    },
+});
 ```
