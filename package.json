@@ -1,6 +1,6 @@
 {
     "name": "@xams-framework/dusk-valtio",
-    "version": "0.1.2",
+    "version": "0.2.1",
     "type": "module",
     "scripts": {
         "dev": "vite --force",

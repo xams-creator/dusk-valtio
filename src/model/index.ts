@@ -24,15 +24,16 @@ export function createValtioModel<S extends object, A extends object>(
             'You must provide an `initialState` value that is not `undefined`. You may have misspelled `initialState`',
         );
     }
-    const _initialState = typeof initialState == 'function' ? initialState(namespace) : initialState;
+    const state = typeof initialState === 'function' ? initialState(namespace) : initialState;
+    const _initialState = deepClone(state);
     const model: ValtioModel<S, A> = {
         namespace,
-        state: proxy(deepClone(_initialState)),
+        state: proxy(state),
         actions: {
             ...actions,
         } as A,
         $reset() {
-            const state = deepClone(_initialState);
+            const state = _initialState;
             Object.keys(state).forEach(key => {
                 model.state[key] = state[key];
             });

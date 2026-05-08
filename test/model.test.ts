@@ -3,6 +3,7 @@ import { createValtioModel } from '../src';
 
 interface CounterState {
     count: number;
+    double: number;
 }
 
 function fetchUser(id: number) {
@@ -14,7 +15,10 @@ describe('createDuskValtioModel', () => {
     const vm = createValtioModel({
         namespace: 'vitest',
         initialState: {
-            count: 0,
+            count: 1,
+            get double() {
+                return this.count * 2;
+            },
         } as CounterState,
         actions: {
             add() {
@@ -34,14 +38,21 @@ describe('createDuskValtioModel', () => {
     });
 
     test('returns vm.state', () => {
-        expect(vm.state).toEqual({ count: 0 });
+        expect(vm.state).toEqual({
+            count: 1,
+            double: 2,
+        });
     });
 
     test('returns vm.add and vm.actions.add', () => {
         expect(vm.add).not.toBeNull();
         expect(vm.actions.add).not.toBeNull();
         vm.add();
-        expect(vm.state.count).toBe(1);
+        expect(vm.state.count).toBe(2);
+    });
+
+    test('returns vm.state.double', () => {
+        expect(vm.state.double).toBe(4);
     });
 
     test('returns vm.set and vm.$reset', () => {
@@ -50,13 +61,14 @@ describe('createDuskValtioModel', () => {
         vm.set(998);
         expect(vm.state.count).toBe(998);
         vm.$reset();
-        expect(vm.state.count).toBe(0);
+        expect(vm.state.count).toBe(1);
+        expect(vm.state.double).toBe(2);
     });
 
 
     test('returns vm.request', async () => {
         expect(vm.request).not.toBeNull();
-        const res = await vm.request(1)
+        const res = await vm.request(1);
         expect(res.id).toBe(1);
     });
 
