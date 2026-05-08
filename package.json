@@ -9,7 +9,8 @@
         "preview": "vite preview",
         "format": "prettier --write --experimental-cli ./",
         "format:check": "prettier --check .",
-        "test": "vitest"
+        "test": "vitest",
+        "publish": "npm publish -access=public"
     },
     "homepage": "https://github.com/xams-creator/dusk-valtio",
     "author": {
@@ -23,7 +24,8 @@
         "react-dom": ">=18"
     },
     "files": [
-        "dist"
+        "dist",
+        "README.md"
     ],
     "main": "./dist/dusk-valtio.js",
     "module": "./dist/dusk-valtio.js",
