@@ -1,20 +1,19 @@
 import { Snapshot } from 'valtio';
 
 export interface ValtioModel<S, A> extends ValtioModelLifecycle<S, A> {
-    readonly namespace: string;
-    state: S;
-    actions: A;
-
+    readonly $namespace: string;
+    $state: S;
+    $actions: A;
     $reset: () => void;
 }
 
 export type InitialStateProvider<S> = (namespace: string) => S;
 
 export interface ValtioModelLifecycle<S, A> {
-    onInitialization?: (this: A & Pick<ValtioModel<S, A>, 'state' | 'namespace' | 'actions'>) => void;
+    onInitialization?: (this: A & Pick<ValtioModel<S, A>, '$state' | '$namespace' | '$actions'>) => void;
     onFinalize?: (state: Readonly<S>, model: ValtioModel<S, A>) => void;
     onStateChange?: (
-        this: A & Pick<ValtioModel<S, A>, 'state' | 'namespace' | 'actions'>,
+        this: A & Pick<ValtioModel<S, A>, '$state' | '$namespace' | '$actions'>,
         oldState: Snapshot<S>,
         newState: Snapshot<S>,
     ) => void;
@@ -33,7 +32,7 @@ export interface CreateValtioModelOptions<S, A> extends ValtioModelLifecycle<S, 
 }
 
 export declare namespace DuskValtio {
-    interface BaseMiddleware {
+    export interface BaseMiddleware {
         name: string;
         order?: number;
         enable?: boolean;
@@ -53,4 +52,11 @@ export declare namespace DuskValtio {
 
     type AsyncApplyFunction<T> = (ctx: T, next: DuskValtio.AsyncNext) => Promise<any>;
     type AsyncNext = () => Promise<any>;
+}
+
+
+export interface DuskValtioManager {
+    version: string;
+
+    use<M extends DuskValtio.Middleware | DuskValtio.AsyncMiddleware>(middleware: M): this;
 }

@@ -6,7 +6,7 @@ export const middlewareMap: CreateValtioModelMiddlewareOptions = {
     async: [],
 };
 
-export function use(middleware: DuskValtio.AsyncMiddleware | DuskValtio.Middleware) {
+export function use<M extends DuskValtio.AsyncMiddleware | DuskValtio.Middleware>(middleware: M) {
     if (!middleware?.apply) {
         throw new Error(`Middleware must have an apply function`);
     }
