@@ -7,7 +7,6 @@ import {
     CreateValtioModelOptions,
     ValtioModel,
 } from '@/types';
-import { scheduler } from '@/utiils';
 
 import { _proxy, isAsyncFunction } from '@/common';
 import { deepClone } from 'valtio/utils';
@@ -30,7 +29,9 @@ export function createValtioModel<S extends object, A extends object>(
     const model: ValtioModel<S, A> = {
         $namespace: namespace,
         $state: $state,
+        // $actions: actions as WithUnderscorePrefix<A>,    // todo 拼接 _add 已完成
         $actions: actions as A,
+        $methods: {} as A,
         $reset() {
             const initialState = deepClone(_initialState);
             Object.keys(initialState).forEach(key => {
@@ -66,7 +67,9 @@ export function createValtioModel<S extends object, A extends object>(
     for (const name of Object.keys(model.$actions)) {
         const fn = model.$actions[name];
         if (typeof fn === 'function') {
+            model.$methods[name] = fn.bind(pm);
             model.$actions[name] = createInterceptedAction(fn, pm, middleware).bind(pm);
+            // model.$actions['_' + name] = fn.bind(pm);
             _proxy(model, '$actions', name);
         }
     }
@@ -78,7 +81,7 @@ export function createValtioModel<S extends object, A extends object>(
     }
     createSubscribe(model);
     if (onInitialization) {
-        scheduler(pm.onInitialization);
+        onInitialization.call(pm);
     }
 
     return pm;

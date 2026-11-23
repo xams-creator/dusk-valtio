@@ -3,9 +3,16 @@ import { Snapshot } from 'valtio';
 export interface ValtioModel<S, A> extends ValtioModelLifecycle<S, A> {
     readonly $namespace: string;
     $state: S;
+    // $actions: WithUnderscorePrefix<A>;// todo 拼接 _add 已完成
     $actions: A;
+    $methods: A;
     $reset: () => void;
 }
+
+export type WithUnderscorePrefix<T> = T & {
+    [K in keyof T as `_${string & K}`]: T[K];
+};
+
 
 export type InitialStateProvider<S> = (namespace: string) => S;
 
