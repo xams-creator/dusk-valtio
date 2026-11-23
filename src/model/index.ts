@@ -39,7 +39,7 @@ export function createValtioModel<S extends object, A extends object>(
         },
     };
 
-    const pm = new Proxy<any>(model, {
+    const pm = new Proxy(model, {
         get(target, prop) {
             if (prop in model.$actions)
                 return model.$actions[prop as keyof typeof model.$actions];
@@ -60,22 +60,23 @@ export function createValtioModel<S extends object, A extends object>(
         },
     }) as ValtioModel<S, A> & A & S;
 
+    for (const name of Object.keys(state)) {
+        _proxy(model, '$state', name);
+    }
     for (const name of Object.keys(model.$actions)) {
         const fn = model.$actions[name];
         if (typeof fn === 'function') {
             model.$actions[name] = createInterceptedAction(fn, pm, middleware).bind(pm);
-            _proxy(model, 'actions', name);
+            _proxy(model, '$actions', name);
         }
     }
     if (onInitialization) {
-        // @ts-ignore
-        pm.onInitialization = onInitialization?.bind(pm);
+        model.onInitialization = onInitialization?.bind(pm);
     }
     if (onStateChange) {
-        // @ts-ignore
-        pm.onStateChange = onStateChange?.bind(pm);
+        model.onStateChange = onStateChange?.bind(pm);
     }
-    createSubscribe(pm);
+    createSubscribe(model);
     if (onInitialization) {
         scheduler(pm.onInitialization);
     }
