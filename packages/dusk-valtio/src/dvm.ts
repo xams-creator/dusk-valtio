@@ -1,6 +1,6 @@
-import { use } from '@/middleware';
-import { DuskValtio, DuskValtioManager } from '@/types';
-import pkg from '@/../package.json';
+import { use } from './middleware';
+import { DuskValtio, DuskValtioManager } from './types';
+import pkg from '../package.json';
 
 function createDuskValtioManager(): DuskValtioManager {
     const dvm = new Proxy({

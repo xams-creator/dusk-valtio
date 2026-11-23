@@ -5,5 +5,5 @@ export function isAsyncFunction(fn: Function) {
 export function noop(...args: any[]) {
 }
 
-export * from './proxy';
+export * from './proxy.ts';
 
