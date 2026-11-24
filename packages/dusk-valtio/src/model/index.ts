@@ -1,20 +1,19 @@
 import { isEqual } from 'lodash';
 import { proxy, snapshot, subscribe } from 'valtio';
-
-import { middlewareMap } from '@/middleware';
 import {
-    CreateValtioModelMiddlewareOptions,
-    CreateValtioModelOptions,
+    CreateValtioModelInterceptorOptions,
+    CreateValtioModelOptions, DuskValtio, DvPluginContext,
     ValtioModel,
 } from '@/types';
 
 import { _proxy, isAsyncFunction } from '@/common';
 import { deepClone } from 'valtio/utils';
+import { plugins as _plugins, getInterceptorApplyFunctions, applyFunctions, asyncApplyFunctions } from '@/plugin';
 
 export function createValtioModel<S extends object, A extends object>(
     options: CreateValtioModelOptions<S, A>,
 ): ValtioModel<S, A> & A & S {
-    const { namespace, actions = {}, initialState, onInitialization, onStateChange, middleware = {} } = options;
+    const { namespace, actions = {}, initialState, onInitialization, onStateChange, plugins = [] } = options;
     if (!namespace) {
         throw new Error('`namespace` is a required option for model');
     }
@@ -38,9 +37,10 @@ export function createValtioModel<S extends object, A extends object>(
                 model.$state[key] = initialState[key];
             });
         },
+        $plugins: [..._plugins, ...plugins],
     };
 
-    const pm = new Proxy(model, {
+    const ctx = new Proxy(model, {
         get(target, prop) {
             if (prop in model.$actions)
                 return model.$actions[prop as keyof typeof model.$actions];
@@ -64,43 +64,60 @@ export function createValtioModel<S extends object, A extends object>(
     for (const name of Object.keys(state)) {
         _proxy(model, '$state', name);
     }
+
+    const interceptorOptions: CreateValtioModelInterceptorOptions = {
+        sync: [],
+        async: [],
+    };
+    plugins?.forEach(plugin => {
+        const [applyFunctions, asyncApplyFunctions] = getInterceptorApplyFunctions(plugin);
+        interceptorOptions.sync?.push(...applyFunctions);
+        interceptorOptions.async?.push(...asyncApplyFunctions);
+    });
+
     for (const name of Object.keys(model.$actions)) {
         const fn = model.$actions[name];
         if (typeof fn === 'function') {
-            model.$methods[name] = fn.bind(pm);
-            model.$actions[name] = createInterceptedAction(fn, pm, middleware).bind(pm);
-            // model.$actions['_' + name] = fn.bind(pm);
+            model.$methods[name] = fn.bind(ctx);
+            model.$actions[name] = createInterceptedAction(fn, ctx, interceptorOptions).bind(ctx);
+            // model.$actions['_' + name] = fn.bind(ctx);
             _proxy(model, '$actions', name);
         }
     }
+
+    model.$plugins.forEach(plugin => {
+        plugin.setup?.(ctx, options);
+    });
+
     if (onInitialization) {
-        model.onInitialization = onInitialization?.bind(pm);
+        model.onInitialization = onInitialization?.bind(ctx);
     }
     if (onStateChange) {
-        model.onStateChange = onStateChange?.bind(pm);
+        model.onStateChange = onStateChange?.bind(ctx);
     }
     createSubscribe(model);
     if (onInitialization) {
-        onInitialization.call(pm);
+        onInitialization.call(ctx);
     }
 
-    return pm;
+    return ctx;
 }
+
 
 function createInterceptedAction<F extends Function>(
     fn: F,
     model: any,
-    middleware: CreateValtioModelMiddlewareOptions,
+    middleware: CreateValtioModelInterceptorOptions,
 ) {
     const isAsync = isAsyncFunction(fn);
     const { async = [], sync = [] } = middleware;
     if (isAsync) {
         return new Proxy(fn, {
-            apply: createAsyncMiddlewarePipeline([...(middlewareMap.async || []), ...async], model),
+            apply: createAsyncMiddlewarePipeline([...(asyncApplyFunctions || []), ...async], model),
         });
     } else {
         return new Proxy(fn, {
-            apply: createSyncMiddlewarePipeline([...(middlewareMap.sync || []), ...sync], model),
+            apply: createSyncMiddlewarePipeline([...(applyFunctions || []), ...sync], model),
         });
     }
 }
@@ -119,7 +136,7 @@ function createSubscribe<S extends object = any, A extends object = any>(model: 
 /**
  * 创建异步中间件管道
  */
-function createAsyncMiddlewarePipeline(middlewares: Array<{ apply: Function }>, model) {
+function createAsyncMiddlewarePipeline(middlewares: DuskValtio.AsyncApplyFunction<any>[], model) {
     return async function(target: Function, thisArg: any, argArray: any[]) {
         let index = -1;
 
@@ -138,25 +155,17 @@ function createAsyncMiddlewarePipeline(middlewares: Array<{ apply: Function }>, 
                 return Reflect.apply(target, thisArg, argArray);
             }
             const middleware = middlewares[i];
-            return await middleware.apply(ctx, () => next(i + 1));
+            return await middleware(ctx, () => next(i + 1));
         };
 
-        return next(0);
-    };
-}
-
-function createMiddlewareContext(model, args, origin) {
-    return {
-        model,
-        params: args,
-        origin,
+        return await next(0);
     };
 }
 
 /**
  * 创建同步中间件管道
  */
-function createSyncMiddlewarePipeline(middlewares: Array<{ apply: Function }>, model) {
+function createSyncMiddlewarePipeline(middlewares: DuskValtio.ApplyFunction<any>[], model) {
     return function(target: Function, thisArg: any, argArray: any[]) {
         let index = -1;
         const ctx = createMiddlewareContext(model, argArray, {
@@ -169,16 +178,22 @@ function createSyncMiddlewarePipeline(middlewares: Array<{ apply: Function }>, m
                 throw new Error('next() called multiple times');
             }
             index = i;
-
             if (i === middlewares.length) {
                 // 执行原始函数
                 return Reflect.apply(target, thisArg, argArray);
             }
-
             const middleware = middlewares[i];
-            return middleware.apply(ctx, () => next(i + 1));
+            return middleware(ctx, () => next(i + 1));
         };
-
         return next(0);
     };
 }
+
+function createMiddlewareContext(model, args, origin): DvPluginContext {
+    return {
+        model,
+        params: args,
+        origin,
+    };
+}
+

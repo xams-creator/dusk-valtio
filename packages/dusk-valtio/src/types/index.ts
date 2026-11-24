@@ -7,6 +7,8 @@ export interface ValtioModel<S, A> extends ValtioModelLifecycle<S, A> {
     $actions: A;
     $methods: A;
     $reset: () => void;
+
+    $plugins: DvPlugin<S, A>[];
 }
 
 export type WithUnderscorePrefix<T> = T & {
@@ -26,36 +28,23 @@ export interface ValtioModelLifecycle<S, A> {
     ) => void;
 }
 
-export interface CreateValtioModelMiddlewareOptions {
-    sync?: DuskValtio.Middleware[];
-    async?: DuskValtio.AsyncMiddleware[];
+export interface CreateValtioModelInterceptorOptions {
+    sync?: DuskValtio.ApplyFunction<ValtioModel<any, any>>[];
+    async?: DuskValtio.AsyncApplyFunction<ValtioModel<any, any>>[];
 }
+
 
 export interface CreateValtioModelOptions<S, A> extends ValtioModelLifecycle<S, A> {
     namespace: string;
     initialState: S | InitialStateProvider<S>;
     actions?: A & ThisType<ValtioModel<S, A> & A & S>;
-    middleware?: CreateValtioModelMiddlewareOptions;
+    plugins?: DvPlugin<S, A>[];
 }
 
 export declare namespace DuskValtio {
-    export interface BaseMiddleware {
-        name: string;
-        order?: number;
-        enable?: boolean;
-        apply: Function;
-    }
-
-    export interface Middleware extends BaseMiddleware {
-        apply: DuskValtio.ApplyFunction<any>;
-    }
 
     type ApplyFunction<T> = (ctx: T, next: DuskValtio.Next) => any;
     type Next = () => any;
-
-    export interface AsyncMiddleware extends BaseMiddleware {
-        apply: DuskValtio.AsyncApplyFunction<any>;
-    }
 
     type AsyncApplyFunction<T> = (ctx: T, next: DuskValtio.AsyncNext) => Promise<any>;
     type AsyncNext = () => Promise<any>;
@@ -64,6 +53,30 @@ export declare namespace DuskValtio {
 
 export interface DuskValtioManager {
     version: string;
+    plugins: DvPlugin[];
+    use(plugin: DvPlugin): this;
+}
 
-    use<M extends DuskValtio.Middleware | DuskValtio.AsyncMiddleware>(middleware: M): this;
+
+export interface DvPlugin<S = any, A = any> {
+    name: string;
+    order?: number;
+    enable?: boolean;
+
+    setup?: (model: ValtioModel<S, A>, options: CreateValtioModelOptions<S, A>) => void;
+
+    interceptor?: {
+        sync?: {
+            apply: DuskValtio.ApplyFunction<DvPluginContext>
+        }
+        async?: {
+            apply: DuskValtio.AsyncApplyFunction<DvPluginContext>
+        }
+    };
+}
+
+export interface DvPluginContext {
+    model: ValtioModel<any, any>;
+    params: any[];
+    origin: any;
 }

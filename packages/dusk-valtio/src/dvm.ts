@@ -1,15 +1,16 @@
-import { use } from './middleware';
-import { DuskValtio, DuskValtioManager } from './types';
+import { plugins, use } from './plugin';
+import { DvPlugin, DuskValtioManager } from './types';
 import pkg from '../package.json';
 
 function createDuskValtioManager(): DuskValtioManager {
     const dvm = new Proxy({
         version: pkg.version,
-        use: <M extends DuskValtio.Middleware | DuskValtio.AsyncMiddleware>(middleware: M) => {
-            use(middleware);
+        plugins: plugins,
+        use(plugin: DvPlugin) {
+            use(plugin);
             return dvm;
         },
-    }, {
+    } as DuskValtioManager, {
         set: () => {
             throw new Error('Cannot set property on DuskValtioManager');
         },
