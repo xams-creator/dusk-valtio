@@ -1,6 +1,6 @@
 {
     "name": "@xams-framework/dusk-valtio",
-    "version": "1.2.3",
+    "version": "1.2.5",
     "type": "module",
     "scripts": {
         "dev": "vite --force",
@@ -10,7 +10,7 @@
         "format": "prettier --write --experimental-cli ./",
         "format:check": "prettier --check .",
         "test": "vitest",
-        "publish": "npm publish --access public"
+        "__publish": "npm publish --access public"
     },
     "homepage": "https://github.com/xams-creator/dusk-valtio",
     "author": {

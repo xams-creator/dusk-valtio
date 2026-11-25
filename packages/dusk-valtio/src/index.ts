@@ -7,3 +7,5 @@ export { _proxy, isAsyncFunction, noop } from './common';
 export { scheduler } from './utiils';
 
 export { dvm } from './dvm.ts';
+
+export * from './types';
