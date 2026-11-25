@@ -79,4 +79,6 @@ export interface DvPluginContext {
     model: ValtioModel<any, any>;
     params: any[];
     origin: any;
+
+    [key: string]: any
 }

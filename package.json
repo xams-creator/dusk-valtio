@@ -13,6 +13,6 @@
         "format:check:dv": "npm run format:check --workspace=packages/dusk-valtio",
         "test:dv": "npm run test --workspace=packages/dusk-valtio",
 
-        "dev:playground": "npm run dev --workspace examples/basic"
+        "dev:example": "npm run dev --workspace examples/example"
     }
 }
