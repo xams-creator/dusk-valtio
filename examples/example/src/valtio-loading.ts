@@ -1,5 +1,4 @@
-import { createValtioModel } from "@xams-framework/dusk-valtio";
-import { definePlugin } from "@xams-framework/dusk-valtio/src/plugin";
+import { createValtioModel, definePlugin } from "@xams-framework/dusk-valtio";
 
 interface LoadingState {
     count: number;
@@ -31,6 +30,7 @@ export default function createAppValtioLoading() {
             sync: {
                 async apply(ctx, next) {
                     try {
+
                         console.log(`[valtio-loading] begin... ${ctx.origin.target.name}`);
                         vm.start();
                         return await next();

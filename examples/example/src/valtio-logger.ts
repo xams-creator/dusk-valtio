@@ -1,4 +1,4 @@
-import { definePlugin } from "@xams-framework/dusk-valtio/src/plugin";
+import { definePlugin, ValtioModel } from "@xams-framework/dusk-valtio";
 import { isAsyncFunction } from "@xams-framework/dusk-valtio";
 
 // Logger 类型枚举
@@ -41,10 +41,12 @@ export default function createValtioLogger(options?: ValtioLoggerOptions) {
 
     return definePlugin({
         name: "test",
+        setup(ctx) {
+            ctx.$logger1 = true;
+        },
         interceptor: {
             sync: {
                 apply(ctx, next) {
-                    console.log('hel2222222222');
                     if (shouldEnableSync) {
                         return logAction(ctx, next, config, excludedActions);
                     }
@@ -53,7 +55,6 @@ export default function createValtioLogger(options?: ValtioLoggerOptions) {
             },
             async: {
                 async apply(ctx, next) {
-
                     if (shouldEnableAsync) {
                         return logAction(ctx, next, config, excludedActions);
                     }
@@ -64,6 +65,11 @@ export default function createValtioLogger(options?: ValtioLoggerOptions) {
     });
 }
 
+declare module "@xams-framework/dusk-valtio" {
+    interface ValtioModel {
+        $logger1: boolean;
+    }
+}
 
 // CSS 样式配置
 const STYLES = {
@@ -171,7 +177,7 @@ function logAction(ctx: any, next: Function, config: Required<ValtioLoggerOption
                 }
             );
         }
-
+        console.log("sync..");
         // 同步场景直接记录
         logSuccess(ctx, action, type, startTime, result, config);
         return result;

@@ -1,19 +1,20 @@
-import { useDuskValtioSnapshot } from "@xams-framework/dusk-valtio";
+import { useSnapshot } from "@xams-framework/dusk-valtio";
 import { store } from "@/store.ts";
 
+
 export function Counter() {
-    const snapshot = useDuskValtioSnapshot(store);
+    const snapshot = useSnapshot(store.$state);
     console.log(1);
     return (
         <>
-            <button onClick={store.add}>+</button>
+            <button onClick={store.asyncAdd}>+</button>
             {snapshot.count} {snapshot.double}
 
-            <ul>
-                {snapshot.obj.list.map((item, index) => (
-                    <li key={index}>{item}</li>
-                ))}
-            </ul>
+            {/*<ul>*/}
+            {/*    {snapshot.obj.list.map((item, index) => (*/}
+            {/*        <li key={index}>{item}</li>*/}
+            {/*    ))}*/}
+            {/*</ul>*/}
         </>
     );
 }
