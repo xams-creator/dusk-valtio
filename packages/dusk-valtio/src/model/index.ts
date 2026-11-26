@@ -89,17 +89,14 @@ export function createValtioModel<S extends object, A extends object>(
         plugin.setup?.(ctx, options);
     });
 
-    if (onInitialization) {
-        model.onInitialization = onInitialization?.bind(ctx);
-    }
+    createSubscribe(model);
     if (onStateChange) {
         model.onStateChange = onStateChange?.bind(ctx);
     }
-    createSubscribe(model);
     if (onInitialization) {
+        model.onInitialization = onInitialization?.bind(ctx);
         onInitialization.call(ctx);
     }
-
     return ctx;
 }
 
@@ -133,59 +130,49 @@ function createSubscribe<S extends object = any, A extends object = any>(model: 
     });
 }
 
-/**
- * 创建异步中间件管道
- */
-function createAsyncMiddlewarePipeline(middlewares: DuskValtio.AsyncApplyFunction<any>[], model) {
-    return async function(target: Function, thisArg: any, argArray: any[]) {
-        let index = -1;
+/** 通用调度器：只负责 index 守卫 + 终点分发 */
+function makeDispatcher(
+    size: number,
+    final: () => any,
+    invoke: (i: number, next: () => any) => any,
+): (i: number) => any {
+    let index = -1;
+    const dispatch = (i: number): any => {
+        if (i <= index) throw new Error('next() called multiple times');
+        index = i;
+        return i === size ? final() : invoke(i, () => dispatch(i + 1));
+    };
+    return dispatch;
+}
 
-        const ctx = createMiddlewareContext(model, argArray, {
-            target,
-            thisArg,
-            argArray,
-        });
-        const next = async (i: number): Promise<any> => {
-            if (i <= index) {
-                throw new Error('next() called multiple times');
-            }
-            index = i;
-            if (i === middlewares.length) {
-                // 执行原始函数
-                return Reflect.apply(target, thisArg, argArray);
-            }
-            const middleware = middlewares[i];
-            return await middleware(ctx, () => next(i + 1));
-        };
-
-        return await next(0);
+function createSyncMiddlewarePipeline(
+    middlewares: DuskValtio.ApplyFunction<any>[],
+    model: any,
+) {
+    return function (target: Function, thisArg: any, argArray: any[]): any {
+        const ctx = createMiddlewareContext(model, argArray, { target, thisArg, argArray });
+        const dispatch = makeDispatcher(
+            middlewares.length,
+            () => Reflect.apply(target, thisArg, argArray),
+            (i, next) => middlewares[i](ctx, next),
+        );
+        return dispatch(0);
     };
 }
 
-/**
- * 创建同步中间件管道
- */
-function createSyncMiddlewarePipeline(middlewares: DuskValtio.ApplyFunction<any>[], model) {
-    return function(target: Function, thisArg: any, argArray: any[]) {
-        let index = -1;
-        const ctx = createMiddlewareContext(model, argArray, {
-            target,
-            thisArg,
-            argArray,
-        });
-        const next = (i: number): any => {
-            if (i <= index) {
-                throw new Error('next() called multiple times');
-            }
-            index = i;
-            if (i === middlewares.length) {
-                // 执行原始函数
-                return Reflect.apply(target, thisArg, argArray);
-            }
-            const middleware = middlewares[i];
-            return middleware(ctx, () => next(i + 1));
-        };
-        return next(0);
+function createAsyncMiddlewarePipeline(
+    middlewares: DuskValtio.AsyncApplyFunction<any>[],
+    model: any,
+) {
+    return async function (target: Function, thisArg: any, argArray: any[]): Promise<any> {
+        const ctx = createMiddlewareContext(model, argArray, { target, thisArg, argArray });
+        const dispatch = makeDispatcher(
+            middlewares.length,
+            () => Reflect.apply(target, thisArg, argArray),
+            (i, next) => middlewares[i](ctx, async () => await next()),  // ← 异步 here
+        );
+        // dispatch 返回的可能是 Promise（中间件异步）或值（中间件同步但异步版语义）
+        return await dispatch(0);
     };
 }
 

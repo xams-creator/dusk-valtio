@@ -1,13 +1,12 @@
 import { Snapshot } from 'valtio';
 
-export interface ValtioModel<S, A> extends ValtioModelLifecycle<S, A> {
+export interface ValtioModel<S = any, A = any> extends ValtioModelLifecycle<S, A> {
     readonly $namespace: string;
     $state: S;
     // $actions: WithUnderscorePrefix<A>;// todo 拼接 _add 已完成
     $actions: A;
     $methods: A;
     $reset: () => void;
-
     $plugins: DvPlugin<S, A>[];
 }
 
@@ -18,19 +17,24 @@ export type WithUnderscorePrefix<T> = T & {
 
 export type InitialStateProvider<S> = (namespace: string) => S;
 
+export type ThisTypeValtioModelLifecycle<S, A> =
+    A
+    & S
+    & Omit<ValtioModel<S, A>, | 'onInitialization' | 'onFinalize' | 'onStateChange'>
+
 export interface ValtioModelLifecycle<S, A> {
-    onInitialization?: (this: A & S & Omit<ValtioModel<S, A>, | 'onInitialization' | 'onFinalize' | 'onStateChange'>) => void;
-    onFinalize?: (state: Readonly<S>, model: ValtioModel<S, A>) => void;
+    onInitialization?: (this: ThisTypeValtioModelLifecycle<S, A>) => void;
+    onFinalize?: (this: ThisTypeValtioModelLifecycle<S, A>) => void;
     onStateChange?: (
-        this: A & S & Omit<ValtioModel<S, A>, | 'onInitialization' | 'onFinalize' | 'onStateChange'>,
+        this: ThisTypeValtioModelLifecycle<S, A>,
         oldState: Snapshot<S>,
         newState: Snapshot<S>,
     ) => void;
 }
 
 export interface CreateValtioModelInterceptorOptions {
-    sync?: DuskValtio.ApplyFunction<ValtioModel<any, any>>[];
-    async?: DuskValtio.AsyncApplyFunction<ValtioModel<any, any>>[];
+    sync?: DuskValtio.ApplyFunction<ValtioModel>[];
+    async?: DuskValtio.AsyncApplyFunction<ValtioModel>[];
 }
 
 
@@ -54,6 +58,7 @@ export declare namespace DuskValtio {
 export interface DuskValtioManager {
     version: string;
     plugins: DvPlugin[];
+
     use(plugin: DvPlugin): this;
 }
 
@@ -76,9 +81,7 @@ export interface DvPlugin<S = any, A = any> {
 }
 
 export interface DvPluginContext {
-    model: ValtioModel<any, any>;
+    model: ValtioModel;
     params: any[];
     origin: any;
-
-    [key: string]: any
 }
