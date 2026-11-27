@@ -42,7 +42,7 @@ export interface CreateValtioModelOptions<S, A> extends ValtioModelLifecycle<S, 
     namespace: string;
     initialState: S | InitialStateProvider<S>;
     actions?: A & ThisType<ValtioModel<S, A> & A & S>;
-    plugins?: DvPlugin<S, A>[];
+    plugins?: DvPlugin[];
 }
 
 export declare namespace DuskValtio {
