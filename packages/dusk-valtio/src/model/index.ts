@@ -23,18 +23,17 @@ export function createValtioModel<S extends object, A extends object>(
         );
     }
     const state = typeof initialState == 'function' ? initialState(namespace) : initialState;
-    const _initialState = deepClone(state);
-    const $state = proxy(state);
+    const $state = proxy(deepClone(state));
     const model: ValtioModel<S, A> = {
         $namespace: namespace,
-        $state: $state,
+        $state,
         // $actions: actions as WithUnderscorePrefix<A>,    // todo 拼接 _add 已完成
         $actions: actions as A,
         $methods: {} as A,
         $reset() {
-            const initialState = deepClone(_initialState);
+            const initialState = deepClone(state);
             Object.keys(initialState).forEach(key => {
-                model.$state[key] = initialState[key];
+                $state[key] = initialState[key];
             });
         },
         $plugins: [..._plugins, ...plugins],
